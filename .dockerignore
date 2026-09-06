@@ -1,0 +1,9 @@
+.env
+.git
+.github
+__pycache__
+*.pyc
+*.db
+trading_bot.log
+.venv
+venv

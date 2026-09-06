@@ -1,0 +1,32 @@
+# Flask (fixes: Requests `Session` object does not verify request after first request with verify=False;
+# Flask session cookie `Vary` header issue is patched upstream in this line)
+Flask==3.0.3
+
+# Alpaca API for trading — 1.5.0 predates get_bars() and modern auth; bump to a maintained line
+alpaca-trade-api==3.2.0
+
+# HTTP requests — fixes credential/cookie leak on cross-origin redirect + .netrc credential leak
+requests==2.32.3
+
+# JWT — fixes HMAC/RSA key-confusion "forged JWT" vuln and JWKClient SSRF/DoS issues
+PyJWT==2.9.0
+
+# Data handling for indicators
+pandas==2.2.2
+numpy==1.26.4
+
+# Date parsing
+python-dateutil==2.9.0.post0
+
+# Env var management — fixes symlink-following vulnerability in older versions
+python-dotenv==1.0.1
+
+# Production WSGI server (do not use Flask's dev server in production)
+gunicorn==22.0.0
+
+# Multi-user accounts and database
+Flask-Login==0.6.3
+Flask-SQLAlchemy==3.1.1
+
+# Encrypting API credentials at rest
+cryptography==43.0.0

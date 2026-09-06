@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Market — Alpine Alpaca{% endblock %}
+{% block content %}
+
+<p class="muted" style="text-align:center;">Read-only — nothing here places an order.</p>
+
+<div class="tabs">
+    <button class="tab-btn active" data-tab="by-symbol">By Symbol</button>
+    <button class="tab-btn" data-tab="by-strategy">By Strategy</button>
+</div>
+
+<section id="by-symbol" class="tab-panel card active">
+    {% if snapshot.by_symbol %}
+    <table>
+        <thead><tr><th>Symbol</th><th>Price</th><th>Signal</th><th>Score</th><th>Agreeing strategies</th></tr></thead>
+        <tbody>
+        {% for row in snapshot.by_symbol %}
+            <tr>
+                <td>{{ row.symbol }}</td>
+                <td>${{ "%.2f"|format(row.price) }}</td>
+                <td>
+                    {% if row.direction == 1 %}<span class="pill buy">Buy</span>
+                    {% elif row.direction == -1 %}<span class="pill sell">Sell / avoid</span>
+                    {% else %}<span class="pill neutral">Neutral</span>{% endif %}
+                </td>
+                <td>{{ (row.score * 100)|round(0)|int }}%</td>
+                <td class="muted">
+                    {{ row.signals | selectattr("direction", "equalto", row.direction) | map(attribute="strategy") | join(", ") if row.direction != 0 else "—" }}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No market data yet — check your API credentials or try again shortly.</p>
+    {% endif %}
+</section>
+
+<section id="by-strategy" class="tab-panel card">
+    {% for name, calls in snapshot.by_strategy.items() %}
+    <h3>{{ name }}</h3>
+    <table>
+        <thead><tr><th>Symbol</th><th>Call</th><th>Confidence</th></tr></thead>
+        <tbody>
+        {% for c in calls %}
+            <tr>
+                <td>{{ c.symbol }}</td>
+                <td>
+                    {% if c.direction == 1 %}<span class="pill buy">Buy</span>
+                    {% elif c.direction == -1 %}<span class="pill sell">Sell</span>
+                    {% else %}<span class="pill neutral">—</span>{% endif %}
+                </td>
+                <td>{{ (c.confidence * 100)|round(0)|int }}%</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endfor %}
+</section>
+
+<script>
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.tab).classList.add("active");
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,69 @@
+name: Backtest
+
+# Runs the backtest engine headlessly on GitHub's servers. Your API keys
+# live only in this repo's encrypted Secrets — never in this file, never in
+# a commit, never pasted anywhere else.
+#
+# Setup (one-time):
+#   Repo Settings -> Secrets and variables -> Actions -> New repository secret
+#     ALPACA_API_KEY     = your paper key
+#     ALPACA_API_SECRET  = your paper secret
+#   (Use PAPER keys here. This workflow only ever backtests/reads historical
+#   data — it never calls submit_order — but keep live keys out of CI
+#   entirely as a matter of habit.)
+#
+# Run it: go to the Actions tab -> "Backtest" -> "Run workflow", fill in the
+# symbols/date range, and GitHub runs it on their infrastructure. Results
+# show up in the run's log and as a downloadable text file.
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbols:
+        description: "Comma-separated symbols, e.g. AAPL,MSFT,NVDA"
+        required: true
+        default: "AAPL,MSFT,NVDA"
+      start_date:
+        description: "Start date YYYY-MM-DD"
+        required: true
+        default: "2022-01-01"
+      end_date:
+        description: "End date YYYY-MM-DD"
+        required: true
+        default: "2024-06-01"
+      spread_bps:
+        description: "Estimated spread/slippage cost in basis points per side"
+        required: false
+        default: "5"
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run backtest
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+        run: |
+          python backtest.py \
+            --source alpaca \
+            --symbols "${{ github.event.inputs.symbols }}" \
+            --start "${{ github.event.inputs.start_date }}" \
+            --end "${{ github.event.inputs.end_date }}" \
+            --spread-bps "${{ github.event.inputs.spread_bps }}" \
+            | tee backtest_results.txt
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-results
+          path: backtest_results.txt

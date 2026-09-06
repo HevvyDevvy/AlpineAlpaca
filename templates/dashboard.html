@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Alpine Alpaca{% endblock %}
+{% block content %}
+
+<div class="hero">
+    <img src="{{ url_for('static', filename='images/alpaca-hero.png') }}" alt="Alpaca in ski gear on a mountain">
+    <div class="hero-caption">
+        <h2>Alpine Alpaca</h2>
+        <p>Reaching great heights, an increment at a time.</p>
+    </div>
+</div>
+
+<p class="warning">
+    ⚠️ Your API key/secret are encrypted before being stored and are only
+    decrypted in memory while a trade cycle runs. Never share them with
+    anyone else — Alpine Alpaca will never ask for them outside this form.
+</p>
+
+<section class="card">
+    <h2>1. Connect your Alpaca account</h2>
+    <form method="POST">
+        <label for="api_key">API Key</label>
+        <input type="text" name="api_key" id="api_key" autocomplete="off" placeholder="{{ 'Saved — leave blank to keep current key' if has_keys else '' }}"><br><br>
+
+        <label for="api_secret">API Secret</label>
+        <input type="password" name="api_secret" id="api_secret" autocomplete="off" placeholder="{{ 'Saved — leave blank to keep current secret' if has_keys else '' }}"><br><br>
+
+        <label class="checkbox-label">
+            <input type="checkbox" name="use_live" {% if is_live %}checked{% endif %}>
+            Use LIVE trading (real money — leave unchecked for Paper API)
+        </label><br><br>
+
+        <button type="submit" name="save_keys">Save credentials</button>
+    </form>
+    <p class="status-line">
+        Credentials: {{ "saved (" + ("LIVE" if is_live else "paper") + " mode)" if has_keys else "not set" }}
+    </p>
+</section>
+
+<section class="card">
+    <h2>2. Run the bot</h2>
+    <form method="POST" id="trading-form">
+        <label for="money">Amount to invest ($)</label>
+        <input type="number" name="money" id="money" min="1" step="0.01" required><br><br>
+        <button type="submit" name="start" {% if is_running %}disabled{% endif %}>Start Trading</button>
+        <button type="submit" name="stop" {% if not is_running %}disabled{% endif %}>Stop Trading</button>
+    </form>
+    <p class="status-line">Status: <strong>{{ "Running" if is_running else "Stopped" }}</strong></p>
+</section>
+
+<section class="card">
+    <h2>Strategy leaderboard</h2>
+    <p class="muted">Strategies with a stronger track record get more say in future decisions.</p>
+    {% if performance %}
+    <table>
+        <thead><tr><th>Strategy</th><th>Trades</th><th>Win rate</th><th>Avg P&amp;L</th></tr></thead>
+        <tbody>
+        {% for p in performance|sort(attribute="total_pnl", reverse=True) %}
+            <tr>
+                <td>{{ p.strategy_name }}</td>
+                <td>{{ p.trades_count }}</td>
+                <td>{{ (p.win_rate * 100)|round(1) }}%</td>
+                <td class="{{ 'positive' if p.avg_pnl >= 0 else 'negative' }}">${{ p.avg_pnl|round(2) }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No trades yet — the leaderboard fills in once the bot has run a cycle.</p>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h2>Recent trades</h2>
+    {% if trades %}
+    <table>
+        <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Strategy</th><th>P&amp;L</th></tr></thead>
+        <tbody>
+        {% for t in trades %}
+            <tr>
+                <td>{{ t.opened_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td>{{ t.symbol }}</td>
+                <td>{{ t.side }}</td>
+                <td>{{ t.strategy_name }}</td>
+                <td class="{{ 'positive' if (t.pnl or 0) >= 0 else 'negative' }}">
+                    {{ "$%.2f"|format(t.pnl) if t.pnl is not none else "—" }}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No trades yet.</p>
+    {% endif %}
+</section>
+
+{% endblock %}

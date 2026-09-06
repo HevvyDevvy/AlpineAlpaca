@@ -1,0 +1,6 @@
+.env
+trading_bot.log
+__pycache__/
+*.pyc
+.venv/
+venv/

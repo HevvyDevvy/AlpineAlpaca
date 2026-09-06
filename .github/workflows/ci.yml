@@ -1,0 +1,35 @@
+name: CI
+
+# Runs on every push/PR — catches syntax errors and broken imports before
+# they ever reach a deployment. This does NOT touch Alpaca or need any
+# secrets; it's a pure code-health check.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile check (catches syntax errors)
+        run: python -m py_compile app.py trading_bot.py utils.py strategies.py ensemble.py models.py crypto_utils.py market_view.py backtest.py
+
+      - name: Import check (catches broken imports/circular deps)
+        run: |
+          python -c "import strategies, ensemble, utils, backtest; print('core modules import cleanly')"
+        env:
+          # Dummy values so app.py/models.py can be imported without a real
+          # deployment's secrets — this only tests that imports succeed, it
+          # never starts the server or touches a database with real data.
+          SECRET_KEY: ci-placeholder-not-a-real-secret
+          MASTER_KEY: 17zNyTzMho5oRY5mz9Hr5dyiklb0OX7AYbwBzt0TNHE=
